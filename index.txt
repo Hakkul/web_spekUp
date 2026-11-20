@@ -1,0 +1,20 @@
+src/
+├── assets/
+│   └── main.css            # Konfigurasi Tailwind & animasi gelombang
+├── stores/
+│   └── appStore.js         # Reactive state (user, topik, skor, localStorage)
+├── router/
+│   └── index.js            # Pengaturan rute halaman (/login, /home, /practice, dll)
+├── components/
+│   ├── BottomNav.vue       # Navigasi bawah responsif
+│   └── GoogleModal.vue     # Modal pilih & tautkan akun Google
+└── views/
+    ├── SplashView.vue
+    ├── AuthView.vue        # Menggabungkan Login, Daftar, & Lupa Sandi
+    ├── OnboardingView.vue  # Menggabungkan Persetujuan Mic & Pilih Level
+    ├── HomeView.vue
+    ├── PracticeView.vue    # Rekam Voice Note & Hasil Koreksi
+    ├── TranslateView.vue   # Terjemahan & Cara Baca
+    ├── QuizView.vue
+    ├── ProfileView.vue
+    └── ClosingView.vue     # Ringkasan Sesi & Layar Penutup
