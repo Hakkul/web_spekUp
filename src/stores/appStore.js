@@ -103,35 +103,43 @@ export const store = reactive({
     }, 2800);
   },
 
-speakEnglish(text) {
+currentAudio: null,
+
+  speakEnglish(text) {
     if (!text) return;
 
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.resume();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-
-      const voices = window.speechSynthesis.getVoices();
-      const enVoice = voices.find(v => v.lang.includes('en-US')) || voices.find(v => v.lang.includes('en'));
-      if (enVoice) utterance.voice = enVoice;
-
-      utterance.onstart = () => {
-        this.showToast('Memutar pengucapan bahasa Inggris...', 'info');
-      };
-
-      utterance.onerror = () => {
-        this.showToast('Suara sistem belum aktif. Coba jalankan spd-say di terminal.', 'warning');
-      };
-
-      window.speechSynthesis.speak(utterance);
-      return;
+    // Hentikan audio yang sedang berjalan agar tidak bertumpuk
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio.currentTime = 0;
     }
 
-    this.showToast('Browser tidak mendukung fitur suara.', 'warning');
+    const audio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
+    this.currentAudio = audio;
+
+    audio.play()
+      .then(() => {
+        this.showToast('Memutar pengucapan bahasa Inggris...', 'info');
+      })
+      .catch((err) => {
+        // Abaikan jika terpotong karena tombol diklik dua kali
+        if (err?.name === 'AbortError') return;
+
+        // Cadangan offline pakai suara bawaan browser
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'en-US';
+          utterance.rate = 0.92;
+          utterance.onstart = () => this.showToast('Memutar pengucapan bahasa Inggris...', 'info');
+          utterance.onerror = () => this.showToast('Gagal memutar suara. Cek koneksi atau volume.', 'warning');
+          window.speechSynthesis.speak(utterance);
+        } else {
+          this.showToast('Gagal memutar suara. Cek koneksi atau volume.', 'warning');
+        }
+      });
   },
+
   markSessionProgress() {
     if (!this.recording.sessionCompleted) {
       this.recording.sessionCompleted = true;
