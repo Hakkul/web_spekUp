@@ -66,14 +66,22 @@ export const store = reactive({
   },
 
   // Memantau sesi login saat aplikasi dibuka atau setelah redirect dari Google
-  async initAuth(router) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      this.syncGoogleUser(session.user);
-    }
+async initAuth(router) {
+    const redirectAfterLogin = () => {
+      if (!router) return;
+      const currentPath = router.currentRoute?.value?.path || window.location.pathname;
+      if (currentPath === '/' || currentPath === '/auth' || window.location.hash.includes('access_token')) {
+        // Bersihkan token panjang dari address bar browser
+        if (window.location.hash.includes('access_token')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+        router.push(this.user.onboardingCompleted ? '/home' : '/onboarding');
+      }
+    };
 
+    // Pasang listener SEBELUM getSession agar event SIGNED_IN tidak terlewat
     supabase.auth.onAuthStateChange((event, currentSession) => {
-      if (event === 'SIGNED_IN' && currentSession?.user) {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && currentSession?.user) {
         const wasLoggedIn = this.user.isLoggedIn;
         this.syncGoogleUser(currentSession.user);
         this.isAuthLoading = false;
@@ -81,13 +89,7 @@ export const store = reactive({
         if (!wasLoggedIn) {
           this.showToast(`Selamat datang, ${this.user.name}!`, 'success');
         }
-
-      if (router) {
-          const currentPath = router.currentRoute?.value?.path;
-          if (currentPath === '/' || currentPath === '/auth') {
-            router.push(this.user.onboardingCompleted ? '/home' : '/onboarding');
-          }
-        }
+        redirectAfterLogin();
       } else if (event === 'SIGNED_OUT') {
         this.user.id = '';
         this.user.isLoggedIn = false;
@@ -96,6 +98,13 @@ export const store = reactive({
         if (router) router.push('/');
       }
     });
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      this.syncGoogleUser(session.user);
+      this.isAuthLoading = false;
+      redirectAfterLogin();
+    }
   },
 
   // Membuka halaman verifikasi Google OAuth asli lewat Supabase
