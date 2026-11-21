@@ -15,11 +15,11 @@ const isActive = (item) => item.match.includes(route.name);
 </script>
 
 <template>
-  <nav class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200/80 px-4 py-2 z-30">
-    <div class="max-w-3xl mx-auto grid grid-cols-4 gap-2">
+  <nav class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200/80 px-4 py-2.5 z-30">
+    <div class="max-w-6xl mx-auto grid grid-cols-4 gap-3">
       <button v-for="item in navItems" :key="item.name" @click="router.push(item.path)"
         :class="isActive(item) ? 'text-brand-600 bg-brand-50 font-semibold' : 'text-slate-400 hover:text-slate-600'"
-        class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 rounded-2xl text-xs sm:text-sm font-medium transition-all">
+        class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 rounded-2xl text-xs sm:text-sm font-medium transition-all">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" :d="item.icon" />
         </svg>

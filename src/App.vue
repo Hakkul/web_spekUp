@@ -30,8 +30,8 @@ const toastColor = (type) => {
     <!-- Modal Google Account -->
     <GoogleModal />
 
-    <!-- Halaman Aktif -->
-    <main class="flex-1 w-full max-w-3xl mx-auto flex flex-col">
+    <!-- Halaman Aktif (Lebar otomatis mengikuti layar hingga max-w-6xl) -->
+    <main class="flex-1 w-full max-w-6xl mx-auto flex flex-col">
       <router-view />
     </main>
 

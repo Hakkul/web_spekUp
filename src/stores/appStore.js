@@ -103,19 +103,35 @@ export const store = reactive({
     }, 2800);
   },
 
-  speakEnglish(text) {
-    if (!('speechSynthesis' in window)) {
-      this.showToast('Browser tidak mendukung pemutar suara otomatis.', 'warning');
+speakEnglish(text) {
+    if (!text) return;
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+
+      const voices = window.speechSynthesis.getVoices();
+      const enVoice = voices.find(v => v.lang.includes('en-US')) || voices.find(v => v.lang.includes('en'));
+      if (enVoice) utterance.voice = enVoice;
+
+      utterance.onstart = () => {
+        this.showToast('Memutar pengucapan bahasa Inggris...', 'info');
+      };
+
+      utterance.onerror = () => {
+        this.showToast('Suara sistem belum aktif. Coba jalankan spd-say di terminal.', 'warning');
+      };
+
+      window.speechSynthesis.speak(utterance);
       return;
     }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.92;
-    window.speechSynthesis.speak(utterance);
-    this.showToast('Memutar pengucapan bahasa Inggris...', 'info');
-  },
 
+    this.showToast('Browser tidak mendukung fitur suara.', 'warning');
+  },
   markSessionProgress() {
     if (!this.recording.sessionCompleted) {
       this.recording.sessionCompleted = true;
