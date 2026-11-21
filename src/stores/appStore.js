@@ -1,19 +1,7 @@
 import { reactive, watch } from 'vue';
+import { CURRICULUM } from '../data/curriculum';
 
-const STORAGE_KEY = 'speakup_vue_store_v1';
-
-const getEducationContext = (edu) => {
-  switch (edu) {
-    case 'SMP':
-      return { place: 'SMP Negeri 1', role: 'junior high school student', goal: 'improve my English speaking' };
-    case 'SMK':
-      return { place: 'SMK Negeri 1', role: 'vocational school student', goal: 'prepare for my future career' };
-    case 'Umum':
-      return { place: 'my workplace', role: 'lifelong learner', goal: 'communicate fluently at work' };
-    default: // SMA
-      return { place: 'SMAN 1 Kejayan', role: 'high school student', goal: 'prepare for university' };
-  }
-};
+const STORAGE_KEY = 'speakup_vue_store_v2';
 
 export const store = reactive({
   toasts: [],
@@ -53,196 +41,8 @@ export const store = reactive({
     parentalAgreed: false
   },
 
- // Materi dibedakan berdasarkan Level (Pemula, Menengah, Lanjut)
-  topicsByLevel: {
-    Pemula: [
-      {
-        id: 'intro-basic',
-        title: 'Perkenalan Singkat',
-        getPrompt: (name, edu) => `My name is ${name}, and I am a ${getEducationContext(edu).role}`,
-        samplePhrase: 'I am a student',
-        sampleMeaning: 'Aku adalah seorang pelajar',
-        samplePhonetic: 'ai em e styudent',
-        sampleExplanation: "Gunakan 'am' setelah subjek 'I' untuk menyatakan identitas."
-      },
-      {
-        id: 'hobby-basic',
-        title: 'Hobi Sederhana',
-        getPrompt: () => 'I like reading books and listening to music',
-        samplePhrase: 'listening to music',
-        sampleMeaning: 'mendengarkan musik',
-        samplePhonetic: 'lisening tu myuzik',
-        sampleExplanation: "Huruf 't' pada 'listening' tidak dibaca (silent t)."
-      },
-      {
-        id: 'daily-basic',
-        title: 'Rutinitas Pagi',
-        getPrompt: () => 'I wake up at five in the morning every day',
-        samplePhrase: 'in the morning',
-        sampleMeaning: 'di pagi hari',
-        samplePhonetic: 'in de morning',
-        sampleExplanation: "Pakai preposisi 'in' untuk keterangan waktu pagi, siang, dan sore."
-      }
-    ],
-    Menengah: [
-      {
-        id: 'goal-mid',
-        title: 'Target & Rencana',
-        getPrompt: (name, edu) => `Hi, I am ${name} from ${getEducationContext(edu).place}, and I want to ${getEducationContext(edu).goal}`,
-        samplePhrase: 'want to improve',
-        sampleMeaning: 'ingin meningkatkan',
-        samplePhonetic: 'wont tu impruv',
-        sampleExplanation: "Setelah 'want to', gunakan kata kerja bentuk pertama (verb 1)."
-      },
-      {
-        id: 'opinion-mid',
-        title: 'Menyampaikan Pendapat',
-        getPrompt: () => 'In my opinion, practicing speaking every day builds confidence',
-        samplePhrase: 'In my opinion',
-        sampleMeaning: 'Menurut pendapatku',
-        samplePhonetic: 'in mai epinyen',
-        sampleExplanation: "Frasa pembuka sopan saat memberikan opini dalam diskusi."
-      },
-      {
-        id: 'experience-mid',
-        title: 'Pengalaman Kemarin',
-        getPrompt: () => 'Yesterday I practiced English conversation with my classmates',
-        samplePhrase: 'practiced conversation',
-        sampleMeaning: 'berlatih percakapan',
-        samplePhonetic: 'prektist konverseisyen',
-        sampleExplanation: "Akhiran '-ed' pada 'practiced' dibaca seperti huruf 't'."
-      }
-    ],
-    Lanjut: [
-      {
-        id: 'pitch-pro',
-        title: 'Presentasi & Argumen',
-        getPrompt: (name, edu) => `As a ${getEducationContext(edu).role}, I believe consistent communication unlocks global opportunities`,
-        samplePhrase: 'global opportunities',
-        sampleMeaning: 'peluang global / mendunia',
-        samplePhonetic: 'gloubel oportyunitiz',
-        sampleExplanation: "Tekankan suku kata ketiga pada kata 'oppor-TU-nities'."
-      },
-      {
-        id: 'problem-pro',
-        title: 'Pemecahan Masalah',
-        getPrompt: () => 'Although speaking foreign languages feels intimidating, persistence overcomes hesitation',
-        samplePhrase: 'overcomes hesitation',
-        sampleMeaning: 'mengatasi keraguan',
-        samplePhonetic: 'ouverkamz heziteisyen',
-        sampleExplanation: "'Although' dipakai untuk menghubungkan dua klausa yang bertentangan."
-      },
-      {
-        id: 'future-pro',
-        title: 'Visi Masa Depan',
-        getPrompt: () => 'Had I started practicing earlier, I would have felt much more articulate today',
-        samplePhrase: 'much more articulate',
-        sampleMeaning: 'jauh lebih fasih & terstruktur',
-        samplePhonetic: 'mac mor artikyelet',
-        sampleExplanation: "Bentuk inversi Conditional Type 3 untuk pengandaian masa lampau."
-      }
-    ]
-  },
-
-  // Soal Kuis dibedakan berdasarkan Level (Pemula, Menengah, Lanjut)
-  quizzesByLevel: {
-    Pemula: [
-      {
-        question: "Bagaimana pelafalan yang tepat untuk kata 'study'?",
-        options: ['stadi', 'studi', 'stedi'],
-        answer: 0,
-        explanation: "Huruf 'u' pada 'study' dibaca pendek seperti 'a' (stadi)."
-      },
-      {
-        question: "Pilih kalimat yang benar untuk menyatakan tempat belajar:",
-        options: ['I study on school', 'I study at school', 'I study to school'],
-        answer: 1,
-        explanation: "Gunakan preposisi 'at' untuk lokasi spesifik seperti sekolah."
-      }
-    ],
-    Menengah: [
-      {
-        question: "Manakah pelafalan yang benar untuk kata 'opinion'?",
-        options: ['o-pi-ni-on', 'e-pin-yen', 'o-pai-nyen'],
-        answer: 1,
-        explanation: "Tekanan berada di suku kata kedua: e-PIN-yen."
-      },
-      {
-        question: "Lengkapi kalimat: 'She has been ___ English for two years.'",
-        options: ['learn', 'learned', 'learning'],
-        answer: 2,
-        explanation: "Present Perfect Continuous menggunakan 'has been + Verb-ing'."
-      }
-    ],
-    Lanjut: [
-      {
-        question: "Apa arti frasa 'overcome hesitation' dalam konteks berbicara?",
-        options: ['Menghindari percakapan', 'Mengatasi rasa ragu', 'Mempercepat tempo bicara'],
-        answer: 1,
-        explanation: "'Overcome' berarti mengatasi, dan 'hesitation' berarti keraguan."
-      },
-      {
-        question: "Pilih struktur kalimat pengandaian (Conditional Type 3) yang tepat:",
-        options: [
-          'If I knew earlier, I would have joined.',
-          'If I had known earlier, I would have joined.',
-          'If I have known earlier, I will join.'
-        ],
-        answer: 1,
-        explanation: "Conditional Type 3 menggunakan pola 'If + Past Perfect (had + V3), would have + V3'."
-      }
-    ]
-  },
-
-  // Soal Kuis dibedakan berdasarkan Level
-  quizzesByLevel: {
-    Pemula: [
-      {
-        question: "Bagaimana pelafalan yang tepat untuk kata 'study'?",
-        options: ['stadi', 'studi', 'stedi'],
-        answer: 0,
-        explanation: "Huruf 'u' pada 'study' dibaca pendek seperti 'a' (stadi)."
-      },
-      {
-        question: "Pilih kalimat yang benar untuk menyatakan tempat belajar:",
-        options: ['I study on school', 'I study at school', 'I study to school'],
-        answer: 1,
-        explanation: "Gunakan preposisi 'at' untuk lokasi spesifik seperti sekolah."
-      }
-    ],
-    Menengah: [
-      {
-        question: "Manakah pelafalan yang benar untuk kata 'opinion'?",
-        options: ['o-pi-ni-on', 'e-pin-yen', 'o-pai-nyen'],
-        answer: 1,
-        explanation: "Tekanan berada di suku kata kedua: e-PIN-yen."
-      },
-      {
-        question: "Lengkapi kalimat: 'She has been ___ English for two years.'",
-        options: ['learn', 'learned', 'learning'],
-        answer: 2,
-        explanation: "Present Perfect Continuous menggunakan 'has been + Verb-ing'."
-      }
-    ],
-    Tinggi: [
-      {
-        question: "Apa arti frasa 'overcome hesitation' dalam konteks berbicara?",
-        options: ['Menghindari percakapan', 'Mengatasi rasa ragu', 'Mempercepat tempo bicara'],
-        answer: 1,
-        explanation: "'Overcome' berarti mengatasi, dan 'hesitation' berarti keraguan."
-      },
-      {
-        question: "Pilih struktur kalimat pengandaian (Conditional Type 3) yang tepat:",
-        options: [
-          'If I knew earlier, I would have joined.',
-          'If I had known earlier, I would have joined.',
-          'If I have known earlier, I will join.'
-        ],
-        answer: 1,
-        explanation: "Conditional Type 3 menggunakan pola 'If + Past Perfect (had + V3), would have + V3'."
-      }
-    ]
-  },
+  // Menyimpan progres 3 tahap untuk setiap kombinasi Jenjang-Tingkatan
+  stageProgressMap: {},
 
   selectedTopicIndex: 0,
   recording: {
@@ -260,18 +60,84 @@ export const store = reactive({
     explanation: 'Study dipakai untuk kegiatan belajar. Pakai at sebelum nama tempat.'
   },
 
-getActiveTopics() {
-    const key = this.user.level === 'Tinggi' ? 'Lanjut' : this.user.level;
-    const levelList = this.topicsByLevel[key] || this.topicsByLevel.Pemula;
-    return levelList.map(item => ({
-      ...item,
-      prompt: item.getPrompt(this.user.name || 'Pelajar', this.user.education || 'SMA')
-    }));
+  getNormalizedLevel() {
+    return this.user.level === 'Tinggi' ? 'Lanjut' : (this.user.level || 'Pemula');
+  },
+
+  getTrackKey() {
+    const edu = this.user.education || 'SMA';
+    const lvl = this.getNormalizedLevel();
+    return `${edu}-${lvl}`;
+  },
+
+  getCurrentTrack() {
+    const edu = CURRICULUM[this.user.education] ? this.user.education : 'SMA';
+    const lvl = this.getNormalizedLevel();
+    return CURRICULUM[edu][lvl] || CURRICULUM.SMA.Pemula;
+  },
+
+  getTrackProgress() {
+    const key = this.getTrackKey();
+    if (!this.stageProgressMap[key]) {
+      this.stageProgressMap[key] = {
+        unlockedStage: 1,
+        stage1Passed: false,
+        stage2Passed: false,
+        stage3Passed: false
+      };
+    }
+    return this.stageProgressMap[key];
+  },
+
+  completeStage(stageNumber) {
+    const prog = this.getTrackProgress();
+    if (stageNumber === 1) {
+      prog.stage1Passed = true;
+      prog.unlockedStage = Math.max(prog.unlockedStage, 2);
+      this.user.newWords += 5;
+      this.user.weeklyProgress = Math.min(100, this.user.weeklyProgress + 20);
+    } else if (stageNumber === 2) {
+      prog.stage2Passed = true;
+      prog.unlockedStage = Math.max(prog.unlockedStage, 3);
+      this.user.streak += 1;
+      this.user.newWords += 4;
+      this.user.weeklyProgress = Math.min(100, this.user.weeklyProgress + 25);
+    } else if (stageNumber === 3) {
+      prog.stage3Passed = true;
+      this.user.newWords += 6;
+      this.user.weeklyProgress = Math.min(100, this.user.weeklyProgress + 30);
+    }
+  },
+
+  getActiveTopics() {
+    const track = this.getCurrentTrack();
+    const userName = this.user.name || 'Pelajar';
+    const personalizedPrompt = track.speaking.targetText.replace(/\b(Dimas|Sania|Reza)\b/g, userName);
+
+    return [
+      {
+        id: 'stage2-speaking',
+        title: track.speaking.title,
+        prompt: personalizedPrompt,
+        samplePhrase: track.speaking.title,
+        sampleMeaning: track.speaking.instruction,
+        samplePhonetic: track.speaking.hint,
+        sampleExplanation: 'Bacalah dengan artikulasi jelas dan tempo stabil.'
+      },
+      {
+        id: 'stage3-reading',
+        title: track.reading.title,
+        prompt: track.reading.passage,
+        samplePhrase: track.reading.title,
+        sampleMeaning: 'Bacaan Pemahaman',
+        samplePhonetic: 'Klik Dengar untuk menyimak pelafalan bacaan',
+        sampleExplanation: 'Perhatikan tanda baca titik dan koma saat membaca paragraf.'
+      }
+    ];
   },
 
   getActiveQuizzes() {
-    const key = this.user.level === 'Tinggi' ? 'Lanjut' : this.user.level;
-    return this.quizzesByLevel[key] || this.quizzesByLevel.Pemula;
+    return this.getCurrentTrack().quiz;
   },
 
   showToast(message, type = 'info') {
@@ -328,8 +194,9 @@ getActiveTopics() {
     this.user.newWords = 0;
     this.user.weeklyProgress = 0;
     this.recording.sessionCompleted = false;
+    this.stageProgressMap = {};
     localStorage.removeItem(STORAGE_KEY);
-    this.showToast('Progres berhasil direset ke 0!', 'info');
+    this.showToast('Semua progres tahap & skor berhasil direset ke 0!', 'info');
   }
 });
 
@@ -337,6 +204,7 @@ try {
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
   if (saved) {
     if (saved.user) Object.assign(store.user, saved.user);
+    if (saved.stageProgressMap) store.stageProgressMap = saved.stageProgressMap;
     if (Array.isArray(saved.accounts)) store.accounts = saved.accounts;
     if (Array.isArray(saved.googleCandidates) && saved.googleCandidates.length) {
       store.googleCandidates = saved.googleCandidates;
@@ -347,6 +215,7 @@ try {
 watch(
   () => ({
     user: store.user,
+    stageProgressMap: store.stageProgressMap,
     accounts: store.accounts,
     googleCandidates: store.googleCandidates
   }),
