@@ -7,8 +7,16 @@ const route = useRoute();
 const router = useRouter();
 
 const tab = computed(() => route.params.tab || 'record');
-const currentTopic = computed(() => store.topics[store.selectedTopicIndex]);
-
+const currentTopic = computed(() => {
+  const base = store.topics[store.selectedTopicIndex];
+  if (base.id === 'intro') {
+    return {
+      ...base,
+      prompt: `My name is ${store.user.name}, and I study at SMAN 1 Kejayan`
+    };
+  }
+  return base;
+});
 const isRecording = ref(false);
 const seconds = ref(0);
 let timerInterval = null;

@@ -78,22 +78,24 @@ const confirmDemoMode = () => {
     </div>
 
     <!-- Modal Input Nama Demo -->
-    <div v-if="showDemoModal" @click.self="showDemoModal = false"
-      class="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div class="screen-enter w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-display text-lg font-extrabold text-slate-900">Mulai Mode Demo</h3>
-          <button @click="showDemoModal = false" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100">✕</button>
-        </div>
-        <p class="text-xs text-slate-500">Masukkan nama panggilanmu agar tampil di beranda latihan:</p>
-        <form @submit.prevent="confirmDemoMode" class="space-y-4">
-          <input v-model="demoName" type="text" placeholder="Contoh: Budi / Sania" autofocus required
-            class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none text-sm" />
-          <button type="submit" class="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md">
-            Masuk ke Beranda
-          </button>
-        </form>
+<Teleport to="body">
+  <div v-if="showDemoModal" @click.self="showDemoModal = false"
+    class="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-[2px] flex items-center justify-center p-4">
+    <div class="screen-enter w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display text-lg font-extrabold text-slate-900">Mulai Mode Demo</h3>
+        <button type="button" @click="showDemoModal = false" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100">✕</button>
       </div>
+      <p class="text-xs text-slate-500">Masukkan nama panggilanmu agar tampil di beranda latihan:</p>
+      <form @submit.prevent="confirmDemoMode" class="space-y-4">
+        <input v-model="demoName" type="text" spellcheck="false" placeholder="Contoh: Budi / Sania" autofocus required
+          class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none text-sm" />
+        <button type="submit" class="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md">
+          Masuk ke Beranda
+        </button>
+      </form>
     </div>
+  </div>
+</Teleport>
   </section>
 </template>

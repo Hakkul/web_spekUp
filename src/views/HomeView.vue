@@ -4,7 +4,16 @@ import { useRouter } from 'vue-router';
 import { store } from '../stores/appStore';
 
 const router = useRouter();
-const currentTopic = computed(() => store.topics[store.selectedTopicIndex]);
+const currentTopic = computed(() => {
+  const base = store.topics[store.selectedTopicIndex];
+  if (base.id === 'intro') {
+    return {
+      ...base,
+      prompt: `My name is ${store.user.name}, and I study at SMAN 1 Kejayan`
+    };
+  }
+  return base;
+});
 
 const cycleTopic = () => {
   store.selectedTopicIndex = (store.selectedTopicIndex + 1) % store.topics.length;
