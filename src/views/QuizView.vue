@@ -9,7 +9,6 @@ const track = computed(() => store.getCurrentTrack());
 const progress = computed(() => store.getTrackProgress());
 const activeStage = ref(1); // 1: Kuis, 2: Speaking, 3: Reading
 
-// Reset tampilan jika user mengganti jenjang/level
 watch(() => store.getTrackKey(), () => {
   activeStage.value = progress.value.unlockedStage;
   resetStage1();
@@ -33,6 +32,7 @@ const questionQueue = ref([]);
 const currentQIndex = ref(0);
 const selectedOpt = ref(null);
 const isQAnswered = ref(false);
+const correctCount1 = ref(0);
 const wrongQuestions = ref([]);
 const stage1Finished = ref(false);
 const stage1Outcome = ref(''); // 'passed' | 'remedial' | 'full_reset'
@@ -48,6 +48,7 @@ const initStage1 = (remedialList = null) => {
   currentQIndex.value = 0;
   selectedOpt.value = null;
   isQAnswered.value = false;
+  correctCount1.value = 0;
   wrongQuestions.value = [];
   stage1Finished.value = false;
   stage1Outcome.value = '';
@@ -63,7 +64,9 @@ const answerStage1 = (idx) => {
   selectedOpt.value = idx;
   isQAnswered.value = true;
 
-  if (idx !== currentQ.value.answer) {
+  if (idx === currentQ.value.answer) {
+    correctCount1.value += 1;
+  } else {
     wrongQuestions.value.push(currentQ.value);
   }
 };
@@ -76,17 +79,16 @@ const nextStage1 = () => {
     return;
   }
 
-  // Evaluasi akhir Tahap 1
   const wrongCount = wrongQuestions.value.length;
   stage1Finished.value = true;
 
   if (wrongCount === 0) {
     stage1Outcome.value = 'passed';
     store.completeStage(1);
-    store.showToast('Sempurna 10/10! Tahap 2 (Speaking) terbuka! 🎉', 'success');
+    store.showToast('Sempurna! Tahap 2 (Speaking) sekarang terbuka! 🎉', 'success');
   } else if (!isRemedialMode.value && wrongCount <= 3) {
     stage1Outcome.value = 'remedial';
-    store.showToast(`Salah ${wrongCount} soal. Masuk Mode Remedial untuk memperbaiki!`, 'warning');
+    store.showToast(`Benar ${correctCount1.value}, Salah ${wrongCount}. Masuk Mode Remedial!`, 'warning');
   } else {
     stage1Outcome.value = 'full_reset';
     store.showToast(
@@ -201,6 +203,7 @@ const rIndex = ref(0);
 const rSelected = ref(null);
 const rAnswered = ref(false);
 const rScore = ref(0);
+const rWrongCount = ref(0);
 const rFinished = ref(false);
 
 const readingQuestions = computed(() => track.value.reading.questions);
@@ -211,6 +214,7 @@ const resetStage3 = () => {
   rSelected.value = null;
   rAnswered.value = false;
   rScore.value = 0;
+  rWrongCount.value = 0;
   rFinished.value = false;
 };
 
@@ -220,6 +224,8 @@ const answerReading = (idx) => {
   rAnswered.value = true;
   if (idx === currentReadingQ.value.answer) {
     rScore.value += 1;
+  } else {
+    rWrongCount.value += 1;
   }
 };
 
@@ -234,7 +240,7 @@ const nextReading = () => {
       store.completeStage(3);
       store.showToast('Selamat! Kamu menuntaskan semua tahap di tingkatan ini! 🏆', 'success');
     } else {
-      store.showToast('Jawab semua pertanyaan bacaan dengan benar untuk lulus Tahap 3!', 'warning');
+      store.showToast(`Benar ${rScore.value}, Salah ${rWrongCount.value}. Jawab semua benar untuk lulus Tahap 3!`, 'warning');
     }
   }
 };
@@ -326,12 +332,24 @@ const upgradeToNextLevel = () => {
           {{ stage1Outcome === 'passed' ? '🎉' : stage1Outcome === 'remedial' ? '🩹' : '🔄' }}
         </div>
 
+        <!-- Ringkasan Benar & Salah -->
+        <div class="flex items-center justify-center gap-3">
+          <span class="px-4 py-1.5 rounded-full bg-mint-50 border border-mint-200 text-mint-700 text-xs sm:text-sm font-bold">
+            ✓ Benar: {{ correctCount1 }}
+          </span>
+          <span class="px-4 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-bold">
+            ✕ Salah: {{ wrongQuestions.length }}
+          </span>
+        </div>
+
         <div v-if="stage1Outcome === 'passed'" class="space-y-2">
-          <h2 class="font-display text-2xl font-extrabold text-slate-900">Lulus Sempurna (10/10)!</h2>
+          <h2 class="font-display text-2xl font-extrabold text-slate-900">
+            Lulus Sempurna ({{ correctCount1 }}/{{ questionQueue.length }})!
+          </h2>
           <p class="text-sm text-slate-600 max-w-md mx-auto">
             Kamu menjawab seluruh soal tanpa kesalahan. Tahap 2 (Speaking) sekarang sudah terbuka!
           </p>
-          <div class="pt-3 flex justify-center gap-3">
+          <div class="pt-3 flex flex-wrap justify-center gap-3">
             <button @click="resetStage1" class="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">
               Latihan Ulang
             </button>
@@ -344,8 +362,9 @@ const upgradeToNextLevel = () => {
         <div v-else-if="stage1Outcome === 'remedial'" class="space-y-2">
           <h2 class="font-display text-2xl font-extrabold text-slate-900">Mode Remedial Aktif</h2>
           <p class="text-sm text-slate-600 max-w-md mx-auto">
-            Kamu salah <span class="font-bold text-rose-600">{{ wrongQuestions.length }} soal</span> (batas maksimal 3 salah).
-            Kamu cukup mengulang <span class="font-bold text-slate-800">{{ wrongQuestions.length }} soal yang salah saja</span> untuk lulus ke Tahap 2!
+            Kamu menjawab <span class="font-bold text-mint-600">{{ correctCount1 }} benar</span> dan
+            <span class="font-bold text-rose-600">{{ wrongQuestions.length }} salah</span> (batas maksimal 3 salah).
+            Cukup ulangi <span class="font-bold text-slate-800">{{ wrongQuestions.length }} soal yang salah saja</span> untuk lulus ke Tahap 2!
           </p>
           <div class="pt-3">
             <button @click="initStage1(wrongQuestions)" class="px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md">
@@ -359,7 +378,7 @@ const upgradeToNextLevel = () => {
           <p class="text-sm text-slate-600 max-w-md mx-auto">
             {{ isRemedialMode
               ? 'Kamu masih melakukan kesalahan pada sesi remedial. Sesuai aturan, kamu wajib mengulang seluruh 10 soal dari awal.'
-              : `Kamu salah ${wrongQuestions.length} soal (lebih dari 3 soal). Kamu wajib mengulang seluruh 10 soal dari awal.`
+              : `Skor kamu ${correctCount1} benar dan ${wrongQuestions.length} salah (lebih dari 3 soal). Kamu wajib mengulang seluruh 10 soal dari awal.`
             }}
           </p>
           <div class="pt-3">
@@ -372,14 +391,21 @@ const upgradeToNextLevel = () => {
 
       <!-- Soal Aktif Tahap 1 -->
       <div v-else-if="currentQ" class="space-y-6">
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <span :class="isRemedialMode ? 'bg-amber-100 text-amber-800' : 'bg-brand-50 text-brand-700'"
             class="px-3 py-1 rounded-full text-xs font-bold">
             {{ isRemedialMode ? '🩹 Mode Remedial' : '📝 Kuis Utama' }} • Soal {{ currentQIndex + 1 }} / {{ questionQueue.length }}
           </span>
-          <span class="text-xs font-semibold text-slate-400">
-            Salah saat ini: <span :class="wrongQuestions.length > 3 ? 'text-rose-600 font-bold' : 'text-slate-700'">{{ wrongQuestions.length }}</span>
-          </span>
+
+          <!-- Badge Benar & Salah Real-time -->
+          <div class="flex items-center gap-2 text-xs font-bold">
+            <span class="px-2.5 py-1 rounded-full bg-mint-50 border border-mint-200 text-mint-700">
+              ✓ Benar: {{ correctCount1 }}
+            </span>
+            <span class="px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700">
+              ✕ Salah: {{ wrongQuestions.length }}
+            </span>
+          </div>
         </div>
 
         <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -533,11 +559,23 @@ const upgradeToNextLevel = () => {
         <div class="w-16 h-16 rounded-3xl bg-mint-50 text-mint-600 flex items-center justify-center text-3xl mx-auto">
           {{ rScore === readingQuestions.length ? '🏆' : '📖' }}
         </div>
+
+        <!-- Ringkasan Benar & Salah Reading -->
+        <div class="flex items-center justify-center gap-3">
+          <span class="px-4 py-1.5 rounded-full bg-mint-50 border border-mint-200 text-mint-700 text-xs sm:text-sm font-bold">
+            ✓ Benar: {{ rScore }}
+          </span>
+          <span class="px-4 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-bold">
+            ✕ Salah: {{ rWrongCount }}
+          </span>
+        </div>
+
         <h3 class="font-display text-xl font-extrabold text-slate-900">
           {{ rScore === readingQuestions.length ? 'Semua Tahap Selesai!' : 'Belum Tepat Semua' }}
         </h3>
         <p class="text-sm text-slate-600">
-          Skor pemahaman bacaanmu: <span class="font-bold text-brand-600">{{ rScore }} / {{ readingQuestions.length }}</span>
+          Skor pemahaman bacaanmu: <span class="font-bold text-mint-600">{{ rScore }} benar</span> &
+          <span class="font-bold text-rose-600">{{ rWrongCount }} salah</span> dari {{ readingQuestions.length }} pertanyaan.
         </p>
 
         <div class="flex flex-wrap justify-center gap-3 pt-2">
@@ -557,9 +595,22 @@ const upgradeToNextLevel = () => {
 
       <!-- Pertanyaan Pemahaman Bacaan -->
       <div v-else-if="currentReadingQ" class="space-y-4 pt-2 border-t border-slate-100">
-        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Pertanyaan Pemahaman {{ rIndex + 1 }} dari {{ readingQuestions.length }}
-        </p>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Pertanyaan Pemahaman {{ rIndex + 1 }} dari {{ readingQuestions.length }}
+          </p>
+
+          <!-- Badge Benar & Salah Reading Real-time -->
+          <div class="flex items-center gap-2 text-xs font-bold">
+            <span class="px-2.5 py-1 rounded-full bg-mint-50 border border-mint-200 text-mint-700">
+              ✓ Benar: {{ rScore }}
+            </span>
+            <span class="px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700">
+              ✕ Salah: {{ rWrongCount }}
+            </span>
+          </div>
+        </div>
+
         <h3 class="font-display text-base sm:text-lg font-bold text-slate-900">
           {{ currentReadingQ.question }}
         </h3>

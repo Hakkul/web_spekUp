@@ -1,37 +1,27 @@
 import { reactive, watch } from 'vue';
 import { CURRICULUM } from '../data/curriculum';
+import { supabase } from '../lib/supabase';
 
 const STORAGE_KEY = 'speakup_vue_store_v2';
 
 export const store = reactive({
   toasts: [],
   currentAudio: null,
+  isAuthLoading: false,
   accounts: [],
-  googleCandidates: [
-    {
-      name: 'Sania Putri',
-      email: 'sania.putri@gmail.com',
-      googleSub: 'google-oauth2|1001',
-      avatarColor: 'from-brand-500 to-indigo-600'
-    }
-  ],
-  googleModal: {
-    isOpen: false,
-    step: 'picker',
-    selectedCandidate: null,
-    pendingName: '',
-    pendingEmail: '',
-    pendingEducation: 'SMA'
-  },
+
   user: {
     id: '',
     name: 'Pelajar',
     email: '',
-    provider: 'email',
+    avatar: '',
+    provider: 'google',
+    isLoggedIn: false,
     googleLinked: false,
     googleEmail: '',
-    education: 'SMA',
-    level: 'Pemula',
+    onboardingCompleted: false,
+    education: '',
+    level: '',
     streak: 0,
     newWords: 0,
     weeklyProgress: 0,
@@ -58,6 +48,81 @@ export const store = reactive({
     meaning: 'Aku belajar di sekolah',
     phonetic: 'ai stadi at skul',
     explanation: 'Study dipakai untuk kegiatan belajar. Pakai at sebelum nama tempat.'
+  },
+
+  // Menyinkronkan data akun Google asli dari Supabase ke state SpeakUp
+  syncGoogleUser(sessionUser) {
+    if (!sessionUser) return;
+    const meta = sessionUser.user_metadata || {};
+
+    this.user.id = sessionUser.id;
+    this.user.email = sessionUser.email || this.user.email;
+    this.user.googleEmail = sessionUser.email || this.user.googleEmail;
+    this.user.name = meta.full_name || meta.name || sessionUser.email?.split('@')[0] || 'Pelajar';
+    this.user.avatar = meta.avatar_url || meta.picture || '';
+    this.user.provider = 'google';
+    this.user.googleLinked = true;
+    this.user.isLoggedIn = true;
+  },
+
+  // Memantau sesi login saat aplikasi dibuka atau setelah redirect dari Google
+  async initAuth(router) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      this.syncGoogleUser(session.user);
+    }
+
+    supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (event === 'SIGNED_IN' && currentSession?.user) {
+        const wasLoggedIn = this.user.isLoggedIn;
+        this.syncGoogleUser(currentSession.user);
+        this.isAuthLoading = false;
+
+        if (!wasLoggedIn) {
+          this.showToast(`Selamat datang, ${this.user.name}!`, 'success');
+        }
+
+      if (router) {
+          const currentPath = router.currentRoute?.value?.path;
+          if (currentPath === '/' || currentPath === '/auth') {
+            router.push(this.user.onboardingCompleted ? '/home' : '/onboarding');
+          }
+        }
+      } else if (event === 'SIGNED_OUT') {
+        this.user.id = '';
+        this.user.isLoggedIn = false;
+        this.user.googleLinked = false;
+        this.user.avatar = '';
+        if (router) router.push('/');
+      }
+    });
+  },
+
+  // Membuka halaman verifikasi Google OAuth asli lewat Supabase
+  async loginWithGoogle() {
+    this.isAuthLoading = true;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    if (error) {
+      this.isAuthLoading = false;
+      this.showToast('Gagal membuka login Google: ' + error.message, 'warning');
+    }
+  },
+
+  // Keluar dari sesi Google & Supabase
+  async logout(router) {
+    await supabase.auth.signOut();
+    this.user.id = '';
+    this.user.isLoggedIn = false;
+    this.user.googleLinked = false;
+    this.user.avatar = '';
+    this.showToast('Berhasil keluar dari akun.', 'info');
+    if (router) router.push('/');
   },
 
   getNormalizedLevel() {
@@ -206,9 +271,6 @@ try {
     if (saved.user) Object.assign(store.user, saved.user);
     if (saved.stageProgressMap) store.stageProgressMap = saved.stageProgressMap;
     if (Array.isArray(saved.accounts)) store.accounts = saved.accounts;
-    if (Array.isArray(saved.googleCandidates) && saved.googleCandidates.length) {
-      store.googleCandidates = saved.googleCandidates;
-    }
   }
 } catch (e) {}
 
@@ -216,8 +278,7 @@ watch(
   () => ({
     user: store.user,
     stageProgressMap: store.stageProgressMap,
-    accounts: store.accounts,
-    googleCandidates: store.googleCandidates
+    accounts: store.accounts
   }),
   (val) => {
     try {

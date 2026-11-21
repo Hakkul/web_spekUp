@@ -1,10 +1,15 @@
 <script setup>
-import { useRoute } from 'vue-router';
+import { onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { store } from './stores/appStore';
 import BottomNav from './components/BottomNav.vue';
-import GoogleModal from './components/GoogleModal.vue';
 
 const route = useRoute();
+const router = useRouter();
+
+onMounted(() => {
+  store.initAuth(router);
+});
 
 const toastColor = (type) => {
   const map = {
@@ -26,9 +31,6 @@ const toastColor = (type) => {
         <span>{{ t.message }}</span>
       </div>
     </div>
-
-    <!-- Modal Google Account -->
-    <GoogleModal />
 
     <!-- Halaman Aktif (Lebar otomatis mengikuti layar hingga max-w-6xl) -->
     <main class="flex-1 w-full max-w-6xl mx-auto flex flex-col">
