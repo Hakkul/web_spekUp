@@ -4,19 +4,11 @@ import { useRouter } from 'vue-router';
 import { store } from '../stores/appStore';
 
 const router = useRouter();
-const currentTopic = computed(() => {
-  const base = store.topics[store.selectedTopicIndex];
-  if (base.id === 'intro') {
-    return {
-      ...base,
-      prompt: `My name is ${store.user.name}, and I study at SMAN 1 Kejayan`
-    };
-  }
-  return base;
-});
+const activeTopics = computed(() => store.getActiveTopics());
+const currentTopic = computed(() => activeTopics.value[store.selectedTopicIndex % activeTopics.value.length]);
 
 const cycleTopic = () => {
-  store.selectedTopicIndex = (store.selectedTopicIndex + 1) % store.topics.length;
+  store.selectedTopicIndex = (store.selectedTopicIndex + 1) % activeTopics.value.length;
 };
 
 const openTranslateSample = () => {

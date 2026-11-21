@@ -1,118 +1,150 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { store } from '../stores/appStore';
 
 const router = useRouter();
 
+const quizzes = computed(() => store.getActiveQuizzes());
 const currentIndex = ref(0);
+const selectedOption = ref(null);
+const isAnswered = ref(false);
 const score = ref(0);
-const answered = ref(null);
+const isFinished = ref(false);
 
-const questions = [
-  {
-    q: "Bagaimana cara baca yang tepat untuk kata 'study'?",
-    options: ["stadi", "studi", "stedi", "stodai"],
-    answer: 0,
-    info: "'Study' dilafalkan /ˈstʌdi/ atau seperti 'stadi'."
-  },
-  {
-    q: "Preposisi yang tepat sebelum nama sekolah spesifik: 'I study ___ SMAN 1 Kejayan'",
-    options: ["in", "on", "at", "to"],
-    answer: 2,
-    info: "Gunakan 'at' sebelum nama institusi atau tempat spesifik."
-  },
-  {
-    q: "Arti dari kalimat 'I speak with confidence' adalah...",
-    options: ["Saya berbicara dengan cepat", "Saya berbicara dengan percaya diri", "Saya takut berbicara", "Saya belajar membaca"],
-    answer: 1,
-    info: "'Confidence' berarti rasa percaya diri."
-  }
-];
+const currentQuestion = computed(() => quizzes.value[currentIndex.value] || null);
 
-const currentQuestion = computed(() => questions[currentIndex.value]);
+// Reset kuis otomatis jika pengguna mengganti level
+watch(() => store.user.level, () => {
+  restartQuiz();
+});
 
-const optionClass = (idx) => {
-  if (answered.value === null) {
-    return 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-800';
-  }
-  if (idx === currentQuestion.value.answer) {
-    return 'border-mint-500 bg-mint-50 text-mint-800 font-bold';
-  }
-  if (idx === answered.value) {
-    return 'border-rose-500 bg-rose-50 text-rose-700';
-  }
-  return 'border-slate-200 bg-slate-50/50 text-slate-400';
-};
+const selectAnswer = (idx) => {
+  if (isAnswered.value || !currentQuestion.value) return;
+  selectedOption.value = idx;
+  isAnswered.value = true;
 
-const answerQuiz = (idx) => {
-  if (answered.value !== null) return;
-  answered.value = idx;
   if (idx === currentQuestion.value.answer) {
     score.value += 1;
-    store.user.newWords += 1;
+    store.showToast('Jawaban tepat! 🎉', 'success');
+  } else {
+    store.showToast('Kurang tepat, cek penjelasannya ya!', 'warning');
   }
 };
 
 const nextQuestion = () => {
-  currentIndex.value += 1;
-  answered.value = null;
+  if (currentIndex.value < quizzes.value.length - 1) {
+    currentIndex.value += 1;
+    selectedOption.value = null;
+    isAnswered.value = false;
+  } else {
+    isFinished.value = true;
+    store.user.newWords += score.value;
+    store.user.weeklyProgress = Math.min(100, store.user.weeklyProgress + 15);
+  }
 };
 
-const resetQuiz = () => {
+const restartQuiz = () => {
   currentIndex.value = 0;
+  selectedOption.value = null;
+  isAnswered.value = false;
   score.value = 0;
-  answered.value = null;
+  isFinished.value = false;
 };
 </script>
 
 <template>
-  <section class="screen-enter p-5 sm:p-8 flex-1 flex flex-col">
-    <div v-if="currentIndex >= questions.length" class="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto w-full">
-      <div class="w-20 h-20 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-4xl mb-4">🏆</div>
-      <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-slate-900">Kuis Selesai!</h2>
-      <p class="text-xs sm:text-sm text-slate-500 mt-1 mb-6">Kamu menjawab benar {{ score }} dari {{ questions.length }} soal</p>
-      <div class="flex gap-3 w-full">
-        <button @click="resetQuiz" class="flex-1 py-3.5 rounded-2xl border border-slate-200 bg-white font-bold text-sm text-slate-700">
+  <section class="screen-enter p-5 sm:p-8 lg:py-10 max-w-3xl mx-auto w-full space-y-6">
+    <!-- Header -->
+    <header class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button @click="router.push('/home')" class="p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="font-display text-xl sm:text-2xl font-extrabold text-slate-900">Kuis Cepat</h1>
+          <p class="text-xs text-slate-500">Tingkatan: <span class="font-bold text-brand-600">{{ store.user.level }}</span> • {{ store.user.education }}</p>
+        </div>
+      </div>
+
+      <span v-if="!isFinished && quizzes.length" class="px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-xs font-bold text-brand-700">
+        Soal {{ currentIndex + 1 }} / {{ quizzes.length }}
+      </span>
+    </header>
+
+    <!-- Tampilan Selesai Kuis -->
+    <div v-if="isFinished" class="bg-white rounded-3xl border border-slate-200/80 p-7 sm:p-10 text-center shadow-sm space-y-5">
+      <div class="w-20 h-20 rounded-3xl bg-mint-50 text-mint-600 flex items-center justify-center text-4xl mx-auto">
+        🏆
+      </div>
+      <div>
+        <h2 class="font-display text-2xl font-extrabold text-slate-900">Kuis Selesai!</h2>
+        <p class="text-sm text-slate-500 mt-1">Kamu menjawab benar <span class="font-bold text-mint-600">{{ score }} dari {{ quizzes.length }}</span> soal.</p>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 max-w-xs mx-auto">
+        <p class="text-xs text-slate-500">Skor Akhir</p>
+        <p class="font-display text-3xl font-extrabold text-brand-600 mt-0.5">
+          {{ Math.round((score / quizzes.length) * 100) }}%
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 pt-2 max-w-md mx-auto">
+        <button @click="restartQuiz" class="flex-1 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all">
           Ulangi Kuis
         </button>
-        <button @click="router.push('/home')" class="flex-1 py-3.5 rounded-2xl bg-brand-600 text-white font-bold text-sm">
-          Ke Beranda
+        <button @click="router.push('/home')" class="flex-1 py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md transition-all">
+          Kembali ke Beranda
         </button>
       </div>
     </div>
 
-    <div v-else class="space-y-5">
-      <div class="flex items-center justify-between">
-        <h1 class="font-display text-xl sm:text-2xl font-extrabold text-slate-900">Kuis Cepat</h1>
-        <span class="px-3.5 py-1.5 rounded-full bg-brand-50 text-brand-600 text-xs font-bold">
-          Soal {{ currentIndex + 1 }}/{{ questions.length }}
-        </span>
+    <!-- Kartu Soal Aktif -->
+    <div v-else-if="currentQuestion" class="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-6">
+      <!-- Progress Bar -->
+      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-full bg-brand-600 transition-all duration-300"
+          :style="{ width: (((currentIndex + 1) / quizzes.length) * 100) + '%' }"></div>
       </div>
 
-      <div class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/80 shadow-sm">
-        <p class="font-display text-base sm:text-lg font-bold text-slate-900 leading-snug mb-5">
-          {{ currentQuestion.q }}
-        </p>
+      <div class="space-y-2">
+        <span class="inline-block px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">
+          Pertanyaan {{ currentIndex + 1 }}
+        </span>
+        <h2 class="font-display text-lg sm:text-xl font-bold text-slate-900 leading-snug">
+          {{ currentQuestion.question }}
+        </h2>
+      </div>
 
-        <div class="space-y-3">
-          <button v-for="(opt, idx) in currentQuestion.options" :key="idx"
-            @click="answerQuiz(idx)" :disabled="answered !== null"
-            :class="optionClass(idx)"
-            class="w-full p-4 rounded-2xl border text-left text-sm sm:text-base font-medium transition-all flex items-center justify-between">
-            <span>{{ opt }}</span>
-            <span v-if="answered !== null && idx === currentQuestion.answer">✓</span>
-          </button>
-        </div>
+      <!-- Pilihan Jawaban -->
+      <div class="space-y-3">
+        <button v-for="(opt, idx) in currentQuestion.options" :key="idx" @click="selectAnswer(idx)"
+          :disabled="isAnswered"
+          :class="[
+            !isAnswered ? 'border-slate-200 bg-slate-50/70 hover:bg-brand-50/50 hover:border-brand-300 text-slate-800' : '',
+            isAnswered && idx === currentQuestion.answer ? 'border-mint-500 bg-mint-50 text-mint-800 font-bold' : '',
+            isAnswered && selectedOption === idx && idx !== currentQuestion.answer ? 'border-rose-400 bg-rose-50 text-rose-700' : '',
+            isAnswered && idx !== currentQuestion.answer && selectedOption !== idx ? 'border-slate-200 bg-white text-slate-400 opacity-70' : ''
+          ]"
+          class="w-full p-4 rounded-2xl border text-left text-sm sm:text-base transition-all flex items-center justify-between gap-3">
+          <span>{{ opt }}</span>
+          <span v-if="isAnswered && idx === currentQuestion.answer" class="text-mint-600 font-bold">✓</span>
+          <span v-else-if="isAnswered && selectedOption === idx && idx !== currentQuestion.answer" class="text-rose-500 font-bold">✕</span>
+        </button>
+      </div>
 
-        <div v-if="answered !== null" class="mt-5 space-y-4">
-          <div class="p-4 rounded-2xl bg-brand-50 text-xs sm:text-sm text-brand-800 leading-relaxed">
-            <strong>Catatan Coach:</strong> {{ currentQuestion.info }}
-          </div>
-          <button @click="nextQuestion" class="w-full py-3.5 rounded-2xl bg-brand-600 text-white font-bold text-sm">
-            Lanjut
-          </button>
-        </div>
+      <!-- Penjelasan setelah menjawab -->
+      <div v-if="isAnswered" class="p-4 rounded-2xl bg-brand-50/70 border border-brand-200/80 space-y-1">
+        <p class="text-xs font-bold text-brand-700">💡 Penjelasan</p>
+        <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">{{ currentQuestion.explanation }}</p>
+      </div>
+
+      <div v-if="isAnswered" class="pt-1">
+        <button @click="nextQuestion" class="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md transition-all">
+          {{ currentIndex < quizzes.length - 1 ? 'Soal Berikutnya →' : 'Lihat Hasil Kuis' }}
+        </button>
       </div>
     </div>
   </section>

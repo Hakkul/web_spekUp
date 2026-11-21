@@ -7,9 +7,13 @@ import AppLogo from '../components/AppLogo.vue';
 const router = useRouter();
 const showDemoModal = ref(false);
 const demoName = ref('');
+const demoEducation = ref('SMA');
+const demoLevel = ref('Pemula');
 
 const openDemoModal = () => {
   demoName.value = '';
+  demoEducation.value = 'SMA';
+  demoLevel.value = 'Pemula';
   showDemoModal.value = true;
 };
 
@@ -22,8 +26,8 @@ const confirmDemoMode = () => {
     provider: 'demo',
     googleLinked: false,
     googleEmail: '',
-    education: 'SMA',
-    level: 'Pemula',
+    education: demoEducation.value,
+    level: demoLevel.value,
     streak: 0,
     newWords: 0,
     weeklyProgress: 0,
@@ -31,8 +35,9 @@ const confirmDemoMode = () => {
     privacyAgreed: true,
     parentalAgreed: true
   });
+  store.selectedTopicIndex = 0;
   showDemoModal.value = false;
-  store.showToast(`Halo ${finalName}! Masuk dalam Mode Demo.`, 'info');
+  store.showToast(`Halo ${finalName}! Mode Demo (${demoEducation.value} • ${demoLevel.value})`, 'info');
   router.push('/home');
 };
 </script>
@@ -77,25 +82,51 @@ const confirmDemoMode = () => {
       </button>
     </div>
 
-    <!-- Modal Input Nama Demo -->
-<Teleport to="body">
-  <div v-if="showDemoModal" @click.self="showDemoModal = false"
-    class="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-[2px] flex items-center justify-center p-4">
-    <div class="screen-enter w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="font-display text-lg font-extrabold text-slate-900">Mulai Mode Demo</h3>
-        <button type="button" @click="showDemoModal = false" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100">✕</button>
+    <!-- Modal Input Nama, Jenjang & Tingkatan Demo -->
+    <Teleport to="body">
+      <div v-if="showDemoModal" @click.self="showDemoModal = false"
+        class="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-[2px] flex items-center justify-center p-4">
+        <div class="screen-enter w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-display text-lg font-extrabold text-slate-900">Mulai Mode Demo</h3>
+            <button type="button" @click="showDemoModal = false" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100">✕</button>
+          </div>
+          <p class="text-xs text-slate-500">Sesuaikan nama, jenjang, dan tingkatan materi latihanmu:</p>
+          <form @submit.prevent="confirmDemoMode" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Panggilan</label>
+              <input v-model="demoName" type="text" spellcheck="false" placeholder="Contoh: Budi / Sania" autofocus required
+                class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Jenjang</label>
+              <div class="grid grid-cols-4 gap-2">
+                <button v-for="j in ['SMP', 'SMA', 'SMK', 'Umum']" :key="j" type="button" @click="demoEducation = j"
+                  :class="demoEducation === j ? 'bg-brand-600 text-white border-brand-600' : 'bg-slate-50 text-slate-600 border-slate-200'"
+                  class="py-2 rounded-xl border text-xs font-bold transition-all">
+                  {{ j }}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Tingkatan</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button v-for="lvl in ['Pemula', 'Menengah', 'Tinggi']" :key="lvl" type="button" @click="demoLevel = lvl"
+                  :class="demoLevel === lvl ? 'bg-mint-600 text-white border-mint-600' : 'bg-slate-50 text-slate-600 border-slate-200'"
+                  class="py-2 rounded-xl border text-xs font-bold transition-all">
+                  {{ lvl }}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md">
+              Masuk ke Beranda
+            </button>
+          </form>
+        </div>
       </div>
-      <p class="text-xs text-slate-500">Masukkan nama panggilanmu agar tampil di beranda latihan:</p>
-      <form @submit.prevent="confirmDemoMode" class="space-y-4">
-        <input v-model="demoName" type="text" spellcheck="false" placeholder="Contoh: Budi / Sania" autofocus required
-          class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none text-sm" />
-        <button type="submit" class="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md">
-          Masuk ke Beranda
-        </button>
-      </form>
-    </div>
-  </div>
-</Teleport>
+    </Teleport>
   </section>
 </template>
