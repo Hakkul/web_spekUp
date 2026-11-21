@@ -1,34 +1,44 @@
 <script setup>
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { store } from '../stores/appStore';
 import AppLogo from '../components/AppLogo.vue';
 
 const router = useRouter();
+const showDemoModal = ref(false);
+const demoName = ref('');
 
-const startDemoMode = () => {
+const openDemoModal = () => {
+  demoName.value = '';
+  showDemoModal.value = true;
+};
+
+const confirmDemoMode = () => {
+  const finalName = demoName.value.trim() || 'Pelajar';
   Object.assign(store.user, {
     id: 'demo-guest',
-    name: 'Sania (Demo)',
+    name: finalName,
     email: 'demo@speakup.id',
     provider: 'demo',
     googleLinked: false,
     googleEmail: '',
     education: 'SMA',
     level: 'Pemula',
-    streak: 3,
-    newWords: 4,
-    weeklyProgress: 65,
+    streak: 0,
+    newWords: 0,
+    weeklyProgress: 0,
     micPermission: true,
     privacyAgreed: true,
     parentalAgreed: true
   });
-  store.showToast('Masuk sebagai Mode Demo tanpa akun!', 'info');
+  showDemoModal.value = false;
+  store.showToast(`Halo ${finalName}! Masuk dalam Mode Demo.`, 'info');
   router.push('/home');
 };
 </script>
 
 <template>
-  <section class="screen-enter flex-1 flex flex-col justify-between p-6 sm:p-10 bg-gradient-to-b from-brand-50/60 via-white to-mint-50/40">
+  <section class="screen-enter flex-1 flex flex-col justify-between p-6 sm:p-10 bg-gradient-to-b from-brand-50/60 via-white to-mint-50/40 relative">
     <div class="flex justify-end">
       <span class="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-brand-600 shadow-sm">
         Versi Pelajar • v1.0
@@ -62,9 +72,28 @@ const startDemoMode = () => {
         </svg>
       </button>
 
-      <button @click="startDemoMode" class="w-full py-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm transition-all flex items-center justify-center gap-2">
+      <button @click="openDemoModal" class="w-full py-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm transition-all flex items-center justify-center gap-2">
         <span>🚀 Coba Mode Demo (Tanpa Akun)</span>
       </button>
+    </div>
+
+    <!-- Modal Input Nama Demo -->
+    <div v-if="showDemoModal" @click.self="showDemoModal = false"
+      class="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div class="screen-enter w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display text-lg font-extrabold text-slate-900">Mulai Mode Demo</h3>
+          <button @click="showDemoModal = false" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100">✕</button>
+        </div>
+        <p class="text-xs text-slate-500">Masukkan nama panggilanmu agar tampil di beranda latihan:</p>
+        <form @submit.prevent="confirmDemoMode" class="space-y-4">
+          <input v-model="demoName" type="text" placeholder="Contoh: Budi / Sania" autofocus required
+            class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none text-sm" />
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md">
+            Masuk ke Beranda
+          </button>
+        </form>
+      </div>
     </div>
   </section>
 </template>
