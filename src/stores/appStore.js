@@ -70,8 +70,7 @@ async initAuth(router) {
     const redirectAfterLogin = () => {
       if (!router) return;
       const currentPath = router.currentRoute?.value?.path || window.location.pathname;
-      if (currentPath === '/' || currentPath === '/auth' || window.location.hash.includes('access_token')) {
-        // Bersihkan token panjang dari address bar browser
+      if (currentPath === '/' || currentPath.startsWith('/auth') || window.location.hash.includes('access_token')) {
         if (window.location.hash.includes('access_token')) {
           window.history.replaceState(null, '', window.location.pathname);
         }

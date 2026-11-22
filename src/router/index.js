@@ -9,6 +9,7 @@ import TranslateView from '../views/TranslateView.vue';
 import QuizView from '../views/QuizView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import ClosingView from '../views/ClosingView.vue';
+import { store } from '../stores/appStore';
 
 const routes = [
   { path: '/', name: 'splash', component: SplashView },
@@ -27,6 +28,16 @@ const router = createRouter({
   routes,
   scrollBehavior() {
     return { top: 0, behavior: 'smooth' };
+  }
+});
+
+router.beforeEach((to) => {
+  const hasOAuthHash = typeof window !== 'undefined' && window.location.hash.includes('access_token');
+  const isAuthenticated = store.user.isLoggedIn || hasOAuthHash;
+
+  // Jika sudah login Google atau sedang membawa token dari Google, cegah balik ke Splash (/) atau Auth (/auth/...)
+  if (isAuthenticated && (to.path === '/' || to.path.startsWith('/auth'))) {
+    return store.user.onboardingCompleted ? '/home' : '/onboarding';
   }
 });
 
