@@ -96,33 +96,35 @@ export const store = reactive({
     });
   },
 
-async loginWithGoogle() {
+async loginWithGoogle(forceSelectAccount = false) {
     this.isAuthLoading = true;
+    const options = {
+      redirectTo: window.location.origin
+    };
+
+    if (forceSelectAccount) {
+      options.queryParams = {
+        prompt: 'select_account'
+      };
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin
-      }
+      options
     });
 
     if (error) {
       this.isAuthLoading = false;
+      this.isSwitchingAccount = false;
       this.showToast('Gagal membuka login Google: ' + error.message, 'warning');
     }
   },
 
-  async switchAcount() {
-    this.isSwitchingAccount = true
-    this.isAuthLoading = true
-   await supabase.auth.signOut();
-    this.user.id = '';
-    this.user.name = 'Pelajar';
-    this.user.email = '';
-    this.user.googleEmail = '';
-    this.user.isLoggedIn = false;
-    this.user.googleLinked = false;
-    this.user.avatar = '';
-    await this.loginWithGoogle();
+  async switchAccount() {
+    this.isSwitchingAccount = true;
+    this.isAuthLoading = true;
+    await supabase.auth.signOut();
+    await this.loginWithGoogle(true);
   },
 
   async logout(router) {
