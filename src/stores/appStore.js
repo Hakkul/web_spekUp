@@ -31,7 +31,6 @@ export const store = reactive({
     parentalAgreed: false
   },
 
-  // Menyimpan progres 3 tahap untuk setiap kombinasi Jenjang-Tingkatan
   stageProgressMap: {},
 
   selectedTopicIndex: 0,
@@ -50,7 +49,6 @@ export const store = reactive({
     explanation: 'Study dipakai untuk kegiatan belajar. Pakai at sebelum nama tempat.'
   },
 
-  // Menyinkronkan data akun Google asli dari Supabase ke state SpeakUp
   syncGoogleUser(sessionUser) {
     if (!sessionUser) return;
     const meta = sessionUser.user_metadata || {};
@@ -65,18 +63,9 @@ export const store = reactive({
     this.user.isLoggedIn = true;
   },
 
-  // Memantau sesi login saat aplikasi dibuka atau setelah redirect dari Google
-async initAuth(router) {
-    const redirectAfterLogin = () => {
-      if (!router) return;
-      const currentPath = router.currentRoute?.value?.path || window.location.pathname;
-      if (currentPath === '/' || currentPath.startsWith('/auth')) {
-        router.push(this.user.onboardingCompleted ? '/home' : '/onboarding');
-      }
-    };
-
+  async initAuth(router) {
     supabase.auth.onAuthStateChange((event, currentSession) => {
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && currentSession?.user) {
+      if (event === 'SIGNED_IN' && currentSession?.user) {
         const wasLoggedIn = this.user.isLoggedIn;
         this.syncGoogleUser(currentSession.user);
         this.isAuthLoading = false;
@@ -84,25 +73,26 @@ async initAuth(router) {
         if (!wasLoggedIn) {
           this.showToast(`Selamat datang, ${this.user.name}!`, 'success');
         }
-        redirectAfterLogin();
+
+        if (router) {
+          const currentPath = router.currentRoute?.value?.path || '';
+          if (currentPath === '/' || currentPath.startsWith('/auth')) {
+            router.push(this.user.onboardingCompleted ? '/home' : '/onboarding');
+          }
+        }
       } else if (event === 'SIGNED_OUT') {
         this.user.id = '';
+        this.user.name = 'Pelajar';
+        this.user.email = '';
+        this.user.googleEmail = '';
         this.user.isLoggedIn = false;
         this.user.googleLinked = false;
         this.user.avatar = '';
         if (router) router.push('/');
       }
     });
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      this.syncGoogleUser(session.user);
-      this.isAuthLoading = false;
-      redirectAfterLogin();
-    }
   },
 
-  // Membuka halaman verifikasi Google OAuth asli lewat Supabase
   async loginWithGoogle() {
     this.isAuthLoading = true;
     const { error } = await supabase.auth.signInWithOAuth({
@@ -118,10 +108,12 @@ async initAuth(router) {
     }
   },
 
-  // Keluar dari sesi Google & Supabase
   async logout(router) {
     await supabase.auth.signOut();
     this.user.id = '';
+    this.user.name = 'Pelajar';
+    this.user.email = '';
+    this.user.googleEmail = '';
     this.user.isLoggedIn = false;
     this.user.googleLinked = false;
     this.user.avatar = '';
