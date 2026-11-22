@@ -31,12 +31,26 @@ const router = createRouter({
   }
 });
 
+// router.beforeEach((to) => {
+//   const hasOAuthHash = typeof window !== 'undefined' && window.location.hash.includes('access_token');
+//   const isAuthenticated = store.user.isLoggedIn || hasOAuthHash;
+
+//   // Jika sudah login Google atau sedang membawa token dari Google, cegah balik ke Splash (/) atau Auth (/auth/...)
+//   if (isAuthenticated && (to.path === '/' || to.path.startsWith('/auth'))) {
+//     return store.user.onboardingCompleted ? '/home' : '/onboarding';
+//   }
+// });
+
 router.beforeEach((to) => {
   const hasOAuthHash = typeof window !== 'undefined' && window.location.hash.includes('access_token');
-  const isAuthenticated = store.user.isLoggedIn || hasOAuthHash;
 
-  // Jika sudah login Google atau sedang membawa token dari Google, cegah balik ke Splash (/) atau Auth (/auth/...)
-  if (isAuthenticated && (to.path === '/' || to.path.startsWith('/auth'))) {
+  // Biarkan Supabase memproses #access_token dulu sebelum router memindahkan halaman
+  if (hasOAuthHash) {
+    return true;
+  }
+
+  // Jika sudah login Google, cegah balik ke Splash (/) atau Auth (/auth/...)
+  if (store.user.isLoggedIn && (to.path === '/' || to.path.startsWith('/auth'))) {
     return store.user.onboardingCompleted ? '/home' : '/onboarding';
   }
 });

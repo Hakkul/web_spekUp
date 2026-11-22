@@ -70,15 +70,11 @@ async initAuth(router) {
     const redirectAfterLogin = () => {
       if (!router) return;
       const currentPath = router.currentRoute?.value?.path || window.location.pathname;
-      if (currentPath === '/' || currentPath.startsWith('/auth') || window.location.hash.includes('access_token')) {
-        if (window.location.hash.includes('access_token')) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
+      if (currentPath === '/' || currentPath.startsWith('/auth')) {
         router.push(this.user.onboardingCompleted ? '/home' : '/onboarding');
       }
     };
 
-    // Pasang listener SEBELUM getSession agar event SIGNED_IN tidak terlewat
     supabase.auth.onAuthStateChange((event, currentSession) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && currentSession?.user) {
         const wasLoggedIn = this.user.isLoggedIn;
