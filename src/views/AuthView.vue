@@ -1,9 +1,15 @@
 <script setup>
+import { onMounted } from 'vue';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { store } from '../stores/appStore';
 
 const router = useRouter();
+
+onMounted(() => {
+  store.isAuthLoading = false;
+  store.isSwitchingAccount = false;
+});
 
 // Mendeteksi apakah dibuka lewat browser bawaan WA / IG / FB / LINE
 const isInAppBrowser = computed(() => {
@@ -83,7 +89,7 @@ const handleGoogleLogin = async () => {
       </div>
 
       <p class="text-[11px] text-slate-400 leading-normal">
-        Autentikasi diamankan oleh Google & Supabase. Kami hanya membaca nama, email, dan foto profil akun Google kamu.
+        Autentikasi diamankan oleh Google & Supabase. Kami hanya membaca nama, email, dan foto profil akun Google kamu, Ndak macem macen kok.
       </p>
     </div>
   </section>

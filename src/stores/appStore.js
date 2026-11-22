@@ -90,11 +90,20 @@ export const store = reactive({
         this.user.isLoggedIn = false;
         this.user.googleLinked = false;
         this.user.avatar = '';
-        if (router && !this.isSwitchingAccount) {
-          router.push('/')
-        } ;
+      if (router && !this.isSwitchingAccount) {
+          router.push('/');
+        }
       }
     });
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        this.syncGoogleUser(session.user);
+      }
+    } finally {
+      this.isAuthLoading = false;
+    }
   },
 
 async loginWithGoogle(forceSelectAccount = false) {

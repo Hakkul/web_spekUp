@@ -95,7 +95,7 @@ const confirmDemoMode = () => {
           <form @submit.prevent="confirmDemoMode" class="space-y-4">
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Panggilan</label>
-              <input v-model="demoName" type="text" spellcheck="false" placeholder="Contoh: Budi / Sania" autofocus required
+              <input v-model="demoName" type="text" spellcheck="false" placeholder="Contoh: Hakkul " autofocus required
                 class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none text-sm" />
             </div>
 
@@ -122,7 +122,7 @@ const confirmDemoMode = () => {
             </div>
 
             <button type="submit" class="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md">
-              Masuk ke Beranda
+              Masuk ke pelajaran
             </button>
           </form>
         </div>
