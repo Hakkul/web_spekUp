@@ -69,6 +69,7 @@ export const store = reactive({
         const wasLoggedIn = this.user.isLoggedIn;
         this.syncGoogleUser(currentSession.user);
         this.isAuthLoading = false;
+        this.isSwitchingAccount = false
 
         if (!wasLoggedIn) {
           this.showToast(`Selamat datang, ${this.user.name}!`, 'success');
@@ -88,12 +89,14 @@ export const store = reactive({
         this.user.isLoggedIn = false;
         this.user.googleLinked = false;
         this.user.avatar = '';
-        if (router) router.push('/');
+        if (router && !this.isSwitchingAccount) {
+          router.push('/')
+        } ;
       }
     });
   },
 
-  async loginWithGoogle() {
+async loginWithGoogle() {
     this.isAuthLoading = true;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -106,6 +109,20 @@ export const store = reactive({
       this.isAuthLoading = false;
       this.showToast('Gagal membuka login Google: ' + error.message, 'warning');
     }
+  },
+
+  async switchAcount() {
+    this.isSwitchingAccount = true
+    this.isAuthLoading = true
+   await supabase.auth.signOut();
+    this.user.id = '';
+    this.user.name = 'Pelajar';
+    this.user.email = '';
+    this.user.googleEmail = '';
+    this.user.isLoggedIn = false;
+    this.user.googleLinked = false;
+    this.user.avatar = '';
+    await this.loginWithGoogle();
   },
 
   async logout(router) {

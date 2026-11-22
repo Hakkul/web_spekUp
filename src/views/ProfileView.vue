@@ -17,7 +17,11 @@ const updateTrack = (edu, lvl) => {
 };
 
 const connectOrSwitchGoogle = async () => {
-  await store.loginWithGoogle();
+  if (store.user.googleLinked) {
+    await store.switchAcount();
+  } else {
+    await store.loginWithGoogle();
+  }
 };
 
 const handleLogout = async () => {
@@ -85,8 +89,7 @@ const handleLogout = async () => {
           Hubungkan akun Google agar progres belajarmu tertaut dengan identitas Google asli.
         </template>
       </p>
-
-      <div class="flex flex-wrap gap-2 pt-1">
+    <div class="flex flex-wrap gap-2 pt-1">
         <button
           type="button"
           @click="connectOrSwitchGoogle"
