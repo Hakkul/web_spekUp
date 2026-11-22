@@ -2,12 +2,14 @@ import { reactive, watch } from 'vue';
 import { CURRICULUM } from '../data/curriculum';
 import { supabase } from '../lib/supabase';
 
+
 const STORAGE_KEY = 'speakup_vue_store_v2';
 
 export const store = reactive({
   toasts: [],
   currentAudio: null,
   isAuthLoading: false,
+  isSwitchingAccount: false,
   accounts: [],
 
   user: {
@@ -69,12 +71,11 @@ export const store = reactive({
         const wasLoggedIn = this.user.isLoggedIn;
         this.syncGoogleUser(currentSession.user);
         this.isAuthLoading = false;
-        this.isSwitchingAccount = false
+        this.isSwitchingAccount = false;
 
         if (!wasLoggedIn) {
           this.showToast(`Selamat datang, ${this.user.name}!`, 'success');
         }
-
         if (router) {
           const currentPath = router.currentRoute?.value?.path || '';
           if (currentPath === '/' || currentPath.startsWith('/auth')) {

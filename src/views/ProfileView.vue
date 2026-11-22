@@ -1,7 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { store } from '../stores/appStore';
+
+onMounted(() => {
+  store.isAuthLoading = false;
+  store.isSwitchingAccount = false;
+});
 
 const router = useRouter();
 const avatarError = ref(false);
@@ -18,7 +23,7 @@ const updateTrack = (edu, lvl) => {
 
 const connectOrSwitchGoogle = async () => {
   if (store.user.googleLinked) {
-    await store.switchAcount();
+    await store.switchAccount();
   } else {
     await store.loginWithGoogle();
   }
